@@ -17,7 +17,7 @@ def files_count(path_fo_folder):
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
 
-log_frmt = '%(asctime)s | %(name)-15s | %(levelname)-9s | %(message)s'
+log_frmt = '%(asctime)s | %(name)-10s | %(levelname)-9s | %(message)s'
 datefmt = '%Y/%m/%d %H:%M:%S'
 
 logger = logging.getLogger()
