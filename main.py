@@ -1,3 +1,5 @@
+import datetime
+
 from keras.models import model_from_json
 from keras.preprocessing.image import DirectoryIterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
@@ -14,7 +16,7 @@ def files_count(path_fo_folder):
 
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 MAX_BATCH_SIZE = 160
@@ -75,6 +77,7 @@ class MyNet(object):
         self.test_g = None     # type: DirectoryIterator
         self.test2_g = None     # type: DirectoryIterator
         self.__score = 0
+        self.__date = datetime.datetime.now().strftime("%y%m%d_%H%M")
         self.create_network()
         self.create_image_generator()
 
@@ -192,21 +195,23 @@ class MyNet(object):
                                                                               round(end_time - self.start_time, 2)))
 
     def __get_file_postfix(self):
-        return "_{}__{}_img_{}".format(self.epoch_counter, round(self.get_network_score(), 0), self.img_size)
+        return "mnmodel_{}_ep_{}__scr_{}_img_{}".format(self.__date, self.epoch_counter,
+                                                 int(round(self.get_network_score(), 0)),self.img_size)
 
-    def save_network(self):
+    def save_network(self, save_json=True, save_yml=False):
         f_str = self.__get_file_postfix()
-        model_json = self.model.to_json()
-        json_file = open("mnist_model{}.json".format(f_str), "w")
-        json_file.write(model_json)
-        json_file.close()
+        if save_json:
+            model_json = self.model.to_json()
+            json_file = open("{}.json".format(f_str), "w")
+            json_file.write(model_json)
+            json_file.close()
+        if save_yml:
+            model_yaml = self.model.to_yaml()
+            yaml_file = open("{}.yml".format(f_str), "w")
+            yaml_file.write(model_yaml)
+            yaml_file.close()
 
-        model_yaml = self.model.to_yaml()
-        yaml_file = open("mnist_model{}.yml".format(f_str), "w")
-        yaml_file.write(model_yaml)
-        yaml_file.close()
-
-        self.model.save_weights("mnist_model{}.h5".format(f_str))
+        self.model.save_weights("{}.h5".format(f_str))
 
     @staticmethod
     def __check_file_exist(file_path):
