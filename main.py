@@ -49,10 +49,14 @@ MAX_BATCH_SIZE = 160
 
 
 class MyNet(object):
+
+    min_step = 2
+    max_step = 10
+
     def __init__(self):
         logging.debug("MyNet::init")
         self.start_time = time.time()
-        self.epochs = 1
+        self.epochs = 3
         self.epoch_counter = 0
         self.bs = 0  # Batch size
         img_size = 50
@@ -75,20 +79,19 @@ class MyNet(object):
         self.spe = 0
         self.vs = 0
         self.set_batch_size(MAX_BATCH_SIZE)
+        logging.info("")
         logging.info("==================================================")
-        self.mul_log_info("Folder sizes:\n "
-                          "# Train samples:\t\t{}\n "
-                          "# Validation samples:\t{}\n "
-                          "# Test samples:\t\t{}\n "
-                          "# Test 2 samples:\t\t{}".
-                          format(self.nb_train_samples,
-                                 self.nb_validation_samples,
-                                 self.nb_test_samples,
-                                 self.nb_test2_samples))
-        logging.info("Train  data dir:\t{}".format(self.train_dir))
-        logging.info("Val    data dir:\t{}".format(self.val_dir))
-        logging.info("Test   data dir:\t{}".format(self.test_dir))
-        logging.info("Test 2 data dir:\t{}".format(self.test2_dir))
+        logging.info("Samples folder sizes:")
+        logging.info("{:20.20}{:>40}".format(" ----> Train:", self.nb_train_samples))
+        logging.info("{:20.20}{:>40}".format(" ----> Validation:", self.nb_validation_samples))
+        logging.info("{:20.20}{:>40}".format(" ----> Test 1:", self.nb_test_samples))
+        logging.info("{:20.20}{:>40}".format(" ----> Test 2:", self.nb_test_samples))
+        logging.info("")
+        logging.info("Data dirs:")
+        logging.info("{:20.20}{:>40}".format(" ----> Train:", self.train_dir))
+        logging.info("{:20.20}{:>40}".format(" ----> Val:", self.val_dir))
+        logging.info("{:20.20}{:>40}".format(" ----> Test 1:", self.test_dir))
+        logging.info("{:20.20}{:>40}".format(" ----> Test 2:", self.test2_dir))
         logging.info("--------------------------------------------------")
         logging.info("Epoch :{}".format(self.epochs))
         # logging.info("Batch Size :{}".format(self.bs))
@@ -179,8 +182,12 @@ class MyNet(object):
             logging.info("---------------------------------------------------------------------------")
             logging.info(" ------------------- Starting fit_generator for epoch # {} -----------------".
                          format(self.epoch_counter+1))
-            self.model.fit_generator(self.train_g, steps_per_epoch=self.spe, epochs=self.epochs,
-                                     validation_data=self.val_g, validation_steps=self.vs, workers=8)
+            self.model.fit_generator(self.train_g,
+                                     steps_per_epoch=self.spe,
+                                     epochs=self.epochs,
+                                     validation_data=self.val_g,
+                                     validation_steps=self.vs,
+                                     workers=8)
             self.epoch_counter += self.epochs
             self.save_network()
             logging.info(" --> Training finished in {} s , total {} s - Total epochs pass: {}.".
@@ -189,16 +196,36 @@ class MyNet(object):
             time.sleep(2)
         logging.info("Total train finished in {} s".format(round(time.time() - st, 2)))
 
+    def __get_score(self, gen=None, steps=1, override_max=True, return_step=False):
+        """
+        :type gen: DirectoryIterator
+        :param gen:
+        :type steps: int
+        :param steps:
+        :type override_max: bool
+        :param override_max:
+        :return:
+        """
+        step = max(self.min_step, steps)
+        if override_max and self.max_step is not None and self.max_step > self.min_step:
+            step = min(step, self.max_step)
+        scores = self.model.evaluate_generator(gen, step)
+        res = round(scores[1] * 100, 10)
+        if return_step:
+            return res, step
+        return res
+
     def get_network_score(self, from_memory=False):
         if from_memory:
             return self.__score
-        scores1 = self.model.evaluate_generator(self.test_g, max(1, self.nb_test_samples // self.bs))
-        __score1 = round(scores1[1] * 100, 6)
-        scores2 = self.model.evaluate_generator(self.test2_g, max(1, self.nb_test2_samples // self.bs))
-        __score2 = round(scores2[1] * 100, 6)
-        total_score = round((__score1 + __score2) / 2.0, 2)
+        step_1 = max(self.min_step, self.nb_test_samples // self.bs)
+        step_2 = max(self.min_step, self.nb_test2_samples // self.bs)
+        __score1, step_1 = self.__get_score(self.test_g, step_1, return_step=True)
+        __score2, step_2 = self.__get_score(self.test2_g, step_2, return_step=True)
+        total_score = (__score1 + __score2) / 2.0
         logging.info(
-            "Accuracy on TEST 1/2 data is: {}% / {}%. [ Final score {}% ]. ".format(__score1, __score2, total_score))
+            "Accuracy on TEST 1/2 data is:{:3.2f}% / {:3.2f}%. {}/{}\t\t"
+            "[ Final score {:15.2f}% ]. ".format(__score1, __score2, step_1, step_2, total_score))
         self.__score = total_score
         return self.__score
 
