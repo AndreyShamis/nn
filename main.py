@@ -147,7 +147,7 @@ class MyNet(object):
             logging.info("-------------------------------------------------------------")
             logging.info(" ------------------- Starting fit_generator -----------------")
             self.model.fit_generator(self.train_g, steps_per_epoch=self.spe, epochs=self.epochs,
-                                     validation_data=self.val_g, validation_steps=self.vs, workers=8, use_multiprocessing=True)
+                                     validation_data=self.val_g, validation_steps=self.vs, workers=8)
             self.epoch_counter += self.epochs
             self.save_network()
             logging.info(" --> Training finished in {} s , total {} s - Total epochs pass: {}.".
@@ -258,9 +258,9 @@ nt.load_images()
 # mnist_model_66__81.0_img_150.h5
 # mnist_model_66__81.0_img_150.json
 # mnist_model_66__81.0_img_150.yml
-# nt.load_network("mnist_model_1__67.0_img_50.json", "mnist_model_1__67.0_img_50.h5")
+nt.load_network("mnmodel_180518_1046_ep_7__scr_77_img_50.json", "mnmodel_180518_1046_ep_7__scr_77_img_50.h5")
 
-nt.compile_network()
+# nt.compile_network()
 nt.train_model()
 nt.finish()
 nt.save_network()
