@@ -1,11 +1,12 @@
 import datetime
-
+import numpy as np
 from keras.models import model_from_json
 from keras.preprocessing.image import DirectoryIterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense
+from keras.preprocessing import image
 import os, os.path
 import logging
 import time
@@ -56,10 +57,10 @@ class MyNet(object):
     def __init__(self):
         logging.debug("MyNet::init")
         self.start_time = time.time()
-        self.epochs = 3
+        self.epochs = 10
         self.epoch_counter = 0
         self.bs = 0  # Batch size
-        img_size = 50
+        img_size = 150
         self.img_size = img_size
         self.img_width, self.img_height = img_size, img_size  # Image size
         # Target Size
@@ -100,7 +101,7 @@ class MyNet(object):
         logging.info("Image size :{} ".format(self.t_s))
         logging.info("Input Shape :{} ".format(self.input_shape))
         logging.info("==================================================")
-        self.model = None
+        self.model = None   # type: Sequential
         self.datagen = None
         self.train_g = None  # type: DirectoryIterator
         self.val_g = None  # type: DirectoryIterator
@@ -319,17 +320,80 @@ class MyNet(object):
         # logging.info("Accuracy of model based on test data is: {}%".format(__score1))
         # self.model = loaded_model
 
+    @staticmethod
+    def half_to_one(val):
+        if val > 0.5:
+            val = -1 * (val-1)
+        if val < 0.5:
+            val = 0.5 - val
+        return round((100*val)/0.5, 2)
+
+    def get_predict(self, img_path):
+        img = image.load_img(img_path, target_size=self.t_s)
+        x = image.img_to_array(img)
+        x /= 255
+        x = np.expand_dims(x, axis=0)
+        prediction = self.model.predict(x)
+        val = round(float(prediction[0][0]), 3)
+        if val < 0.5:
+            logging.info("CAT with {} {} probability - file {}".format(val, self.half_to_one(val), img_path))
+            return 0
+        elif val > 0.5:
+            logging.info("DOG with {} {} probability - file {}".format(val, self.half_to_one(val), img_path))
+            return 1
+        else:
+            logging.info(" UNKNOWN with {} {} probability - file {}".format(val, self.half_to_one(val), img_path))
+            return None
+
 
 nt = MyNet()
 
 nt.load_images()
 
-# mnist_model_66__81.0_img_150.h5
-# mnist_model_66__81.0_img_150.json
-# mnist_model_66__81.0_img_150.yml
-nt.load_network("mnmodel_180518_1046_ep_7__scr_77_img_50")
+# nt.load_network("mnmodel_180518_1412_ep_6__scr_82_img_50")
+#
+# direc = "./cats"
+# cats_found = 0
+# dogs_found = 0
+# unknown_found = 0
+# counter = 0
+# for filename in os.listdir(direc):
+#     counter += 1
+#     if filename.endswith(".jpg") or filename.endswith(".png") or filename.endswith(".jpeg"):
+#         # print(os.path.join(directory, filename))
+#         filik = os.path.join(direc, filename)
+#         res = nt.get_predict(filik)
+#         if res == 1:
+#             title, ext = os.path.splitext(os.path.basename(filename))
+#             os.rename(filik, os.path.join(direc, "cat.bad.{}{}".format(counter, ext)))
+#         if res == 0:
+#             cats_found +=1
+#         if res == 1:
+#             dogs_found +=1
+#         if res is None:
+#             unknown_found +=1
+#         continue
+#     else:
+#         continue
+# logging.info("Cats found {}".format(cats_found))
+# logging.info("Dogs found {}".format(dogs_found))
+# logging.info("Unknown found {}".format(unknown_found))
 
-# nt.compile_network()
+# nt.get_predict("cat.30001.jpg")
+# nt.get_predict("cat.30002.jpg")
+# nt.get_predict("cat.30003.jpg")
+# nt.get_predict("cat.30004.jpg")
+# nt.get_predict("cat.30005.jpg")
+# nt.get_predict("dog.30001.jpg")
+# nt.get_predict("dog.30002.jpg")
+# nt.get_predict("dog.30003.jpg")
+# nt.get_predict("dog.30004.jpg")
+# nt.get_predict("dog.30005.jpg")
+
+nt.compile_network()
 nt.train_model()
 nt.finish()
 nt.save_network()
+
+#   Allocation of X exceeds 10% of system memory
+# export TF_CPP_MIN_LOG_LEVEL=2
