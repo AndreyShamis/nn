@@ -111,8 +111,8 @@ class MyNet(object):
         # logging.info("Batch Size :{}".format(self.bs))
         # logging.info("Steps peer epoch :{} ".format(self.spe))
         # logging.info("Validation steps :{} ".format(self.vs))
-        logging.info("{:20.20}{:>40}".format("Image size :", self.t_s))
-        logging.info("{:20.20}{:>40}".format("Input Shape :", self.input_shape))
+        logging.info("{:20.20}{}".format("Image size :", self.t_s))
+        logging.info("{:20.20}{}".format("Input Shape :", self.input_shape))
         logging.info("==================================================")
 
     def __mul_log_info(self, msg):
@@ -354,8 +354,8 @@ nt = MyNet()
 
 nt.load_images()
 
-# nt.load_network("mnmodel_180518_1412_ep_6__scr_82_img_50")
-#
+nt.load_network("mnmodel_180519_1711_ep_25__scr_81_img_75")
+
 # direc = "./cats"
 # cats_found = 0
 # dogs_found = 0
@@ -394,7 +394,7 @@ nt.load_images()
 # nt.get_predict("dog.30004.jpg")
 # nt.get_predict("dog.30005.jpg")
 
-nt.compile_network()
+# nt.compile_network()
 nt.train_model()
 nt.finish()
 nt.save_network()
