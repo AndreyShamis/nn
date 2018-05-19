@@ -57,10 +57,10 @@ class MyNet(object):
     def __init__(self):
         logging.debug("MyNet::init")
         self.start_time = time.time()
-        self.epochs = 10
+        self.epochs = 5
         self.epoch_counter = 0
         self.bs = 0  # Batch size
-        img_size = 150
+        img_size = 75
         self.img_size = img_size
         self.img_width, self.img_height = img_size, img_size  # Image size
         # Target Size
@@ -80,6 +80,19 @@ class MyNet(object):
         self.spe = 0
         self.vs = 0
         self.set_batch_size(MAX_BATCH_SIZE)
+        self.__print_start_info()
+        self.model = None   # type: Sequential
+        self.datagen = None
+        self.train_g = None  # type: DirectoryIterator
+        self.val_g = None  # type: DirectoryIterator
+        self.test_g = None  # type: DirectoryIterator
+        self.test2_g = None  # type: DirectoryIterator
+        self.__score = 0
+        self.__date = datetime.datetime.now().strftime("%y%m%d_%H%M")
+        self.create_network()
+        self.create_image_generator()
+
+    def __print_start_info(self):
         logging.info("")
         logging.info("==================================================")
         logging.info("Samples folder sizes:")
@@ -98,21 +111,11 @@ class MyNet(object):
         # logging.info("Batch Size :{}".format(self.bs))
         # logging.info("Steps peer epoch :{} ".format(self.spe))
         # logging.info("Validation steps :{} ".format(self.vs))
-        logging.info("Image size :{} ".format(self.t_s))
-        logging.info("Input Shape :{} ".format(self.input_shape))
+        logging.info("{:20.20}{:>40}".format("Image size :", self.t_s))
+        logging.info("{:20.20}{:>40}".format("Input Shape :", self.input_shape))
         logging.info("==================================================")
-        self.model = None   # type: Sequential
-        self.datagen = None
-        self.train_g = None  # type: DirectoryIterator
-        self.val_g = None  # type: DirectoryIterator
-        self.test_g = None  # type: DirectoryIterator
-        self.test2_g = None  # type: DirectoryIterator
-        self.__score = 0
-        self.__date = datetime.datetime.now().strftime("%y%m%d_%H%M")
-        self.create_network()
-        self.create_image_generator()
 
-    def mul_log_info(self, msg):
+    def __mul_log_info(self, msg):
         tmp_arr = msg.split("\n")
         for s in tmp_arr:
             logging.info(s)
@@ -138,6 +141,7 @@ class MyNet(object):
         model.add(Dense(1))
         model.add(Activation('sigmoid'))
         self.model = model
+        return self.model
 
     def compile_network(self, model=None):
         logging.info("Start Compiling neural network")
