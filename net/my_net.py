@@ -20,12 +20,13 @@ data_path = os.path.join(cur_path, "../", "data")
 class MyNet(object):
 
     min_step = 2
-    max_step = 10
+    max_step = 120
 
-    def __init__(self):
+    def __init__(self, epochs=1, date_time=None):
         logging.debug("MyNet::init")
+        self.__compiled = False
         self.start_time = time.time()
-        self.epochs = 5
+        self.epochs = epochs
         self.epoch_counter = 0
         self.bs = 0  # Batch size
         img_size = 75
@@ -56,7 +57,10 @@ class MyNet(object):
         self.test_g = None  # type: DirectoryIterator
         self.test2_g = None  # type: DirectoryIterator
         self.__score = 0
-        self.__date = datetime.datetime.now().strftime("%y%m%d_%H%M")
+        if date_time is not None:
+            self.__date = date_time
+        else:
+            self.__date = datetime.datetime.now().strftime("%y%m%d_%H%M")
         self.create_network()
         self.create_image_generator()
 
@@ -122,6 +126,7 @@ class MyNet(object):
             self.model = model
         self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
         logging.info("End Compiling neural network")
+        self.__compiled = True
         return self.model
 
     def create_image_generator(self):
@@ -147,6 +152,8 @@ class MyNet(object):
         # Train MODEL with generators usage
         # train_generator - data generator for training
         # validation_data - generators for validation
+        if not self.__compiled:
+            self.compile_network()
         st = time.time()
         logging.info(
             "Starting to train the model with generators usage. "
@@ -296,6 +303,7 @@ class MyNet(object):
         # __score1 = round(scores[1] * 100, 6)
         # logging.info("Accuracy of model based on test data is: {}%".format(__score1))
         # self.model = loaded_model
+        return True
 
     @staticmethod
     def half_to_one(val):
